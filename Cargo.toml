@@ -21,6 +21,8 @@ clap = { version = "4.5.20", features = [
 ] }
 color-eyre = "0.6.3"
 config = "0.14.0"
+cron-descriptor = "0.1.1"
+cron-parser = "0.10.0"
 crossterm = { version = "0.28.1", features = ["serde", "event-stream"] }
 derive_deref = "1.1.1"
 directories = "5.0.1"
@@ -41,6 +43,8 @@ tokio-util = "0.7.12"
 tracing = "0.1.40"
 tracing-error = "0.2.0"
 tracing-subscriber = { version = "0.3.18", features = ["env-filter", "serde"] }
+tui-big-text = "0.7.1"
+unicode-width = "0.2.0"
 
 [build-dependencies]
 anyhow = "1.0.90"
