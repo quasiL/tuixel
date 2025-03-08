@@ -6,8 +6,8 @@ use tokio::sync::mpsc;
 use tracing::{debug, info};
 
 use crate::{
-    action::Action,
-    components::{fps::FpsCounter, home::Home, Component},
+    action::{Action, Module},
+    components::{cron::Cron, home::Home, Component},
     config::Config,
     tui::{Event, Tui},
 };
@@ -29,6 +29,7 @@ pub struct App {
 pub enum Mode {
     #[default]
     Home,
+    Cron,
 }
 
 impl App {
@@ -37,7 +38,7 @@ impl App {
         Ok(Self {
             tick_rate,
             frame_rate,
-            components: vec![Box::new(Home::new()), Box::new(FpsCounter::default())],
+            components: vec![Box::new(Home::new()), Box::new(Cron::new())],
             should_quit: false,
             should_suspend: false,
             config: Config::new()?,
@@ -91,7 +92,6 @@ impl App {
         let action_tx = self.action_tx.clone();
         match event {
             Event::Quit => action_tx.send(Action::Quit)?,
-            Event::Tick => action_tx.send(Action::Tick)?,
             Event::Render => action_tx.send(Action::Render)?,
             Event::Resize(x, y) => action_tx.send(Action::Resize(x, y))?,
             Event::Key(key) => self.handle_key_event(key)?,
@@ -132,19 +132,23 @@ impl App {
 
     fn handle_actions(&mut self, tui: &mut Tui) -> Result<()> {
         while let Ok(action) = self.action_rx.try_recv() {
-            if action != Action::Tick && action != Action::Render {
-                debug!("{action:?}");
-            }
+            // if action != Action::Tick && action != Action::Render {
+            //     debug!("{action:?}");
+            // }
             match action {
-                Action::Tick => {
-                    self.last_tick_key_events.drain(..);
-                }
+                // Action::Tick => {
+                //     self.last_tick_key_events.drain(..);
+                // }
                 Action::Quit => self.should_quit = true,
                 Action::Suspend => self.should_suspend = true,
                 Action::Resume => self.should_suspend = false,
                 Action::ClearScreen => tui.terminal.clear()?,
                 Action::Resize(w, h) => self.handle_resize(tui, w, h)?,
                 Action::Render => self.render(tui)?,
+                Action::ChangeMode(module) => match module {
+                    Module::Home => self.mode = Mode::Home,
+                    Module::Cron => self.mode = Mode::Cron,
+                },
                 _ => {}
             }
             for component in self.components.iter_mut() {

@@ -6,5 +6,8 @@
       "<Ctrl-c>": "Quit", // Yet another way to quit
       "<Ctrl-z>": "Suspend" // Suspend the application
     },
+    "Cron": {
+      "<q>": { "ChangeMode": "Home" },
+    }
   }
 }

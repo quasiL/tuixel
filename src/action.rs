@@ -3,7 +3,6 @@ use strum::Display;
 
 #[derive(Debug, Clone, PartialEq, Eq, Display, Serialize, Deserialize)]
 pub enum Action {
-    Tick,
     Render,
     Resize(u16, u16),
     Suspend,
@@ -12,4 +11,12 @@ pub enum Action {
     ClearScreen,
     Error(String),
     Help,
+    ChangeMode(Module),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Display, Serialize, Deserialize, Default, Copy)]
+pub enum Module {
+    #[default]
+    Home,
+    Cron,
 }
