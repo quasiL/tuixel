@@ -11,6 +11,8 @@ repository = "https://github.com/quasiL/tuixel"
 
 [dependencies]
 better-panic = "0.3.0"
+chrono = "0.4.40"
+chrono-tz = "0.10.1"
 clap = { version = "4.5.20", features = [
     "derive",
     "cargo",
@@ -44,6 +46,7 @@ tracing = "0.1.40"
 tracing-error = "0.2.0"
 tracing-subscriber = { version = "0.3.18", features = ["env-filter", "serde"] }
 tui-big-text = "0.7.1"
+tui-textarea = "0.7.0"
 unicode-width = "0.2.0"
 
 [build-dependencies]

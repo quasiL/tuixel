@@ -9,6 +9,7 @@ mod app;
 mod cli;
 mod components;
 mod config;
+mod draw;
 mod errors;
 mod logging;
 mod style;

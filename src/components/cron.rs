@@ -1,26 +1,214 @@
 pub mod edit;
+pub mod utils;
 
 use color_eyre::Result;
-use ratatui::{prelude::*, widgets::*};
+use ratatui::{
+    crossterm::event::{MouseEvent, MouseEventKind},
+    layout::{Alignment, Constraint, Layout, Margin, Rect},
+    prelude::{Buffer, Frame, StatefulWidget},
+    text::Text,
+    widgets::{
+        Cell, HighlightSpacing, Row, Scrollbar, ScrollbarOrientation, ScrollbarState, Table,
+        TableState,
+    },
+};
 use tokio::sync::mpsc::UnboundedSender;
 
 use super::Component;
 use crate::{
     action::{Action, Module},
     config::Config,
+    draw::Drawable,
+    style::TableStyles,
 };
-use edit::Edit;
+use edit::Inputs;
+use utils::{constraint_len_calculator, from_crontab};
+
+impl Drawable for Cron {}
+const ITEM_HEIGHT: usize = 4;
 
 #[derive(Default)]
 pub struct Cron {
     command_tx: Option<UnboundedSender<Action>>,
     config: Config,
     enabled: bool,
+    state: TableState,
+    items: Vec<CronJob>,
+    longest_item_lens: (u16, u16, u16),
+    scroll_state: ScrollbarState,
+    styles: TableStyles,
+    show_popup: bool,
+    inputs: Inputs,
+}
+
+#[derive(Default)]
+pub struct CronJob {
+    pub cron_notation: String,
+    pub job: String,
+    pub job_description: String,
+    pub next_execution: String,
+}
+
+impl CronJob {
+    const fn ref_array(&self) -> [&String; 3] {
+        [
+            &self.cron_notation,
+            &self.next_execution,
+            &self.job_description,
+        ]
+    }
+
+    pub fn new(cron_job: CronJob) -> Self {
+        Self {
+            cron_notation: cron_job.cron_notation,
+            job: cron_job.job,
+            job_description: cron_job.job_description,
+            next_execution: cron_job.next_execution,
+        }
+    }
 }
 
 impl Cron {
     pub fn new() -> Self {
-        Self::default()
+        let cron_jobs_vec = from_crontab().unwrap_or_else(|err| {
+            tracing::error!("Error reading crontab: {}", err);
+            vec![CronJob {
+                cron_notation: format!("Error: {}", err),
+                job: String::new(),
+                job_description: String::new(),
+                next_execution: String::new(),
+            }]
+        });
+        let scroll_position = if cron_jobs_vec.is_empty() {
+            0
+        } else {
+            (cron_jobs_vec.len() - 1) * ITEM_HEIGHT
+        };
+        Self {
+            command_tx: None,
+            config: Config::default(),
+            enabled: false,
+            state: TableState::default().with_selected(0),
+            longest_item_lens: constraint_len_calculator(&cron_jobs_vec),
+            scroll_state: ScrollbarState::new(scroll_position),
+            styles: TableStyles::new(),
+            items: cron_jobs_vec,
+            show_popup: false,
+            inputs: Inputs::default(),
+        }
+    }
+
+    fn draw_table(&mut self, frame: &mut Frame, area: Rect) {
+        let header = ["Cron Notation", "Next Execution", "Description"]
+            .into_iter()
+            .map(|title| Cell::from(Text::from(format!("\n{}\n", title))))
+            .collect::<Row>()
+            .style(self.styles.header_style)
+            .height(3);
+
+        let rows = self.items.iter().enumerate().map(|(i, data)| {
+            let color = if i % 2 == 0 {
+                self.styles.normal_row_color
+            } else {
+                self.styles.alt_row_color
+            };
+            let item = data.ref_array();
+            item.into_iter()
+                .map(|content| Cell::from(Text::from(format!("\n{content}\n"))))
+                .collect::<Row>()
+                .style(self.styles.row_style.bg(color))
+                .height(ITEM_HEIGHT.try_into().unwrap())
+        });
+
+        let bar = " ▌ ";
+        let table = Table::new(
+            rows,
+            [
+                Constraint::Length(self.longest_item_lens.0 + 8),
+                Constraint::Min(self.longest_item_lens.1 + 1),
+                Constraint::Min(self.longest_item_lens.2),
+            ],
+        )
+        .header(header)
+        .row_highlight_style(self.styles.selected_row_style)
+        .style(
+            self.styles
+                .row_style
+                .bg(if (self.items.len() + 1) % 2 == 0 {
+                    self.styles.alt_row_color
+                } else {
+                    self.styles.normal_row_color
+                }),
+        )
+        .highlight_symbol(Text::from(vec![
+            "".into(),
+            bar.into(),
+            bar.into(),
+            "".into(),
+        ]))
+        .highlight_spacing(HighlightSpacing::Always);
+
+        frame.render_stateful_widget(table, area, &mut self.state);
+    }
+
+    fn draw_scrollbar(&mut self, frame: &mut Frame, area: Rect) {
+        let scrollbar = Scrollbar::default()
+            .orientation(ScrollbarOrientation::VerticalRight)
+            .begin_symbol(None)
+            .end_symbol(None)
+            .style(self.styles.scrollbar_style);
+
+        frame.render_stateful_widget(
+            scrollbar,
+            area.inner(Margin {
+                vertical: 1,
+                horizontal: 1,
+            }),
+            &mut self.scroll_state,
+        );
+    }
+
+    fn next_row(&mut self) {
+        let i = match self.state.selected() {
+            Some(i) => {
+                if i >= self.items.len() - 1 {
+                    0
+                } else {
+                    i + 1
+                }
+            }
+            None => 0,
+        };
+        self.state.select(Some(i));
+        self.scroll_state = self.scroll_state.position(i * ITEM_HEIGHT);
+    }
+
+    fn previous_row(&mut self) {
+        let i = match self.state.selected() {
+            Some(i) => {
+                if i == 0 {
+                    self.items.len() - 1
+                } else {
+                    i - 1
+                }
+            }
+            None => 0,
+        };
+        self.state.select(Some(i));
+        self.scroll_state = self.scroll_state.position(i * ITEM_HEIGHT);
+    }
+
+    fn first_row(&mut self) {
+        self.state.select(Some(0));
+        self.scroll_state = self.scroll_state.position(0);
+    }
+
+    fn last_row(&mut self) {
+        if !self.items.is_empty() {
+            let last_index = self.items.len() - 1;
+            self.state.select(Some(last_index));
+            self.scroll_state = self.scroll_state.position(last_index * ITEM_HEIGHT);
+        }
     }
 }
 
@@ -36,22 +224,59 @@ impl Component for Cron {
     }
 
     fn update(&mut self, action: Action) -> Result<Option<Action>> {
-        match action {
-            Action::ChangeMode(Module::Cron) => {
-                self.enabled = true;
+        if let Action::ChangeMode(Module::Cron) = action {
+            self.enabled = true;
+        }
+        if self.enabled {
+            match action {
+                Action::ChangeMode(Module::Home) => {
+                    self.enabled = false;
+                    return Ok(Some(Action::ClearScreen));
+                }
+                Action::Select => {
+                    // self.enabled = false;
+                    // return self.process_select();
+                }
+                Action::MoveUp => {
+                    self.previous_row();
+                }
+                Action::MoveDown => {
+                    self.next_row();
+                }
+                Action::MoveToTheFirst => {
+                    self.first_row();
+                }
+                Action::MoveToTheLast => {
+                    self.last_row();
+                }
+                _ => {}
             }
-            Action::ChangeMode(Module::Home) => {
-                self.enabled = false;
-                return Ok(Some(Action::ClearScreen));
-            }
-            _ => {}
         }
         Ok(None)
     }
 
     fn draw(&mut self, frame: &mut Frame, area: Rect) -> Result<()> {
         if self.enabled {
-            frame.render_widget(Paragraph::new("cron"), area);
+            let vertical = Layout::vertical([Constraint::Min(1), Constraint::Length(2)]);
+            let rects = vertical.split(area);
+
+            self.draw_table(frame, rects[0]);
+            self.draw_scrollbar(frame, rects[0]);
+            self.draw_footer(
+                frame,
+                rects[1],
+                vec![
+                    ("<Esc>", "Return to the main menu"),
+                    ("<Enter>", "Edit selected cron"),
+                    ("<↓↑>", "Move up and down"),
+                    ("<d>", "Delete selected cron"),
+                    ("<n>", "Add new cron"),
+                ],
+            )?;
+
+            // if self.show_popup {
+            //     self.inputs.draw_inputs(frame, rects[0]);
+            // }
         }
         Ok(())
     }

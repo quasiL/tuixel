@@ -12,6 +12,11 @@ pub enum Action {
     Error(String),
     Help,
     ChangeMode(Module),
+    Select,
+    MoveUp,
+    MoveDown,
+    MoveToTheFirst,
+    MoveToTheLast,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Display, Serialize, Deserialize, Default, Copy)]

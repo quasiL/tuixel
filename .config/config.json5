@@ -1,15 +1,25 @@
 {
   "keybindings": {
     "Home": {
-      "<q>": "Quit", // Quit the application
-      "<Esc>": "Quit", // Quit the application
-      "<Ctrl-d>": "Quit", // Another way to quit
-      "<Ctrl-c>": "Quit", // Yet another way to quit
-      "<Ctrl-z>": "Suspend" // Suspend the application
+      "<q>": "Quit",
+      "<Esc>": "Quit",
+      "<Ctrl-d>": "Quit",
+      "<Ctrl-c>": "Quit",
+      "<Enter>": "Select",
+      "<Up>": "MoveUp",
+      "<Down>": "MoveDown",
+      "<Home>": "MoveToTheFirst",
+      "<End>": "MoveToTheLast"
     },
     "Cron": {
       "<q>": { "ChangeMode": "Home" },
       "<Esc>": { "ChangeMode": "Home" },
+      "<Enter>": "Select",
+      "<Up>": "MoveUp",
+      "<Down>": "MoveDown",
+      "<Home>": "MoveToTheFirst",
+      "<End>": "MoveToTheLast"
     }
-  }
+  },
+  "timezone": "Europe/Prague"
 }

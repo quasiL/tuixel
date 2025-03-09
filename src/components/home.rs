@@ -1,11 +1,10 @@
 use color_eyre::Result;
 use ratatui::{
-    crossterm::event::{KeyCode, KeyEvent, MouseEvent, MouseEventKind},
+    crossterm::event::{MouseEvent, MouseEventKind},
     layout::{Alignment, Constraint, Layout, Rect},
     prelude::Frame,
-    style::{Color, Style},
-    text::{Line, Span, Text},
-    widgets::{Block, List, ListState, Paragraph},
+    text::Text,
+    widgets::{Block, List, ListState},
 };
 use tokio::sync::mpsc::UnboundedSender;
 use tui_big_text::{BigText, PixelSize};
@@ -14,6 +13,7 @@ use super::Component;
 use crate::{
     action::{Action, Module},
     config::Config,
+    draw::Drawable,
     style::MenuStyles,
 };
 
@@ -37,6 +37,8 @@ struct MenuItem {
     label: &'static str,
     action: fn() -> Action,
 }
+
+impl Drawable for Home {}
 
 impl Home {
     pub fn new() -> Self {
@@ -78,7 +80,7 @@ impl Home {
         }
     }
 
-    fn draw_title(&mut self, frame: &mut Frame, area: Rect) -> Result<()> {
+    fn draw_title(&self, frame: &mut Frame, area: Rect) -> Result<()> {
         let block = Block::default().style(self.styles.header_border_style);
         let inner_area = block.inner(area);
 
@@ -96,8 +98,8 @@ impl Home {
             .lines(vec!["TUIxel".into()])
             .build();
 
-        frame.render_widget(block, area); // Render the block
-        frame.render_widget(big_text, text_area); // Render the text
+        frame.render_widget(block, area);
+        frame.render_widget(big_text, text_area);
 
         Ok(())
     }
@@ -117,53 +119,6 @@ impl Home {
             .highlight_style(self.styles.selected_row_style);
 
         frame.render_stateful_widget(list, area, &mut self.menu_list.state);
-
-        Ok(())
-    }
-
-    fn draw_footer(
-        &mut self,
-        frame: &mut Frame,
-        area: Rect,
-        keybinds: Vec<(&str, &str)>,
-    ) -> Result<()> {
-        let mut spans: Vec<Span> = Vec::new();
-        let mut lines: Vec<Line> = Vec::new();
-
-        let mut current_width = 0;
-        let max_width = area.width.saturating_sub(4);
-
-        for (key, desc) in &keybinds {
-            let key_span = Span::styled(*key, Style::default().fg(Color::Gray));
-            let desc_span = Span::styled(*desc, Style::default().fg(Color::DarkGray));
-            let spacing = Span::raw("  ");
-
-            let pair_width = key.len() as u16 + 1 + desc.len() as u16 + 2;
-
-            if current_width + pair_width > max_width && !spans.is_empty() {
-                lines.push(Line::from(spans));
-                spans = Vec::new();
-                current_width = 0;
-            }
-
-            spans.push(key_span);
-            spans.push(Span::raw(" "));
-            spans.push(desc_span);
-            spans.push(spacing);
-
-            current_width += pair_width;
-        }
-
-        if !spans.is_empty() {
-            lines.push(Line::from(spans));
-        }
-
-        let info_footer = Paragraph::new(Text::from(lines))
-            .style(Style::default().bg(Color::Rgb(30, 41, 59)))
-            .alignment(ratatui::layout::Alignment::Center)
-            .block(Block::default());
-
-        frame.render_widget(info_footer, area);
 
         Ok(())
     }
@@ -189,31 +144,6 @@ impl Component for Home {
     fn register_config_handler(&mut self, config: Config) -> Result<()> {
         self.config = config;
         Ok(())
-    }
-
-    fn handle_key_event(&mut self, key: KeyEvent) -> Result<Option<Action>> {
-        if self.enabled {
-            match key.code {
-                KeyCode::Enter => {
-                    self.enabled = false;
-                    return self.process_select();
-                }
-                KeyCode::Char('j') | KeyCode::Down => {
-                    self.menu_list.state.select_next();
-                }
-                KeyCode::Char('k') | KeyCode::Up => {
-                    self.menu_list.state.select_previous();
-                }
-                KeyCode::Home => {
-                    self.menu_list.state.select_first();
-                }
-                KeyCode::End => {
-                    self.menu_list.state.select_last();
-                }
-                _ => {}
-            }
-        }
-        Ok(None)
     }
 
     fn handle_mouse_event(&mut self, mouse: MouseEvent) -> Result<Option<Action>> {
@@ -242,6 +172,27 @@ impl Component for Home {
     fn update(&mut self, action: Action) -> Result<Option<Action>> {
         if let Action::ChangeMode(Module::Home) = action {
             self.enabled = true;
+        }
+        if self.enabled {
+            match action {
+                Action::Select => {
+                    self.enabled = false;
+                    return self.process_select();
+                }
+                Action::MoveUp => {
+                    self.menu_list.state.select_previous();
+                }
+                Action::MoveDown => {
+                    self.menu_list.state.select_next();
+                }
+                Action::MoveToTheFirst => {
+                    self.menu_list.state.select_first();
+                }
+                Action::MoveToTheLast => {
+                    self.menu_list.state.select_last();
+                }
+                _ => {}
+            }
         }
         Ok(None)
     }

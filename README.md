@@ -8,3 +8,5 @@
 - cron-parser
 - tui-big-text
 - unicode-width
+- chrono
+- chrono-tz
