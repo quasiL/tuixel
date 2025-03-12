@@ -18,7 +18,12 @@
       "<Up>": "MoveUp",
       "<Down>": "MoveDown",
       "<Home>": "MoveToTheFirst",
-      "<End>": "MoveToTheLast"
+      "<End>": "MoveToTheLast",
+      "<n>": "NewRecord",
+      "<d>": "DeleteRecord"
+    },
+    "CronPopup": {
+      "<q>": { "ChangeMode": "Cron" },
     }
   },
   "timezone": "Europe/Prague"

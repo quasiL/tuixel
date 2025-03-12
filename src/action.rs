@@ -17,6 +17,9 @@ pub enum Action {
     MoveDown,
     MoveToTheFirst,
     MoveToTheLast,
+    NewRecord,
+    DeleteRecord,
+    SendData(String),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Display, Serialize, Deserialize, Default, Copy)]
@@ -24,4 +27,5 @@ pub enum Module {
     #[default]
     Home,
     Cron,
+    CronPopup,
 }

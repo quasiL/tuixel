@@ -7,7 +7,12 @@ use tracing::{debug, info};
 
 use crate::{
     action::{Action, Module},
-    components::{cron::Cron, home::Home, Component},
+    components::{
+        cron::{self, Cron},
+        cron_popup::CronPopup,
+        home::Home,
+        Component,
+    },
     config::Config,
     tui::{Event, Tui},
 };
@@ -30,6 +35,7 @@ pub enum Mode {
     #[default]
     Home,
     Cron,
+    CronPopup,
 }
 
 impl App {
@@ -38,7 +44,11 @@ impl App {
         Ok(Self {
             tick_rate,
             frame_rate,
-            components: vec![Box::new(Home::new()), Box::new(Cron::new())],
+            components: vec![
+                Box::new(Home::new()),
+                Box::new(Cron::new()),
+                Box::new(CronPopup::new()),
+            ],
             should_quit: false,
             should_suspend: false,
             config: Config::new()?,
@@ -112,7 +122,7 @@ impl App {
         };
         match keymap.get(&vec![key]) {
             Some(action) => {
-                info!("Got action: {action:?}");
+                //info!("Got action: {action:?}");
                 action_tx.send(action.clone())?;
             }
             _ => {
@@ -122,7 +132,7 @@ impl App {
 
                 // Check for multi-key combinations
                 if let Some(action) = keymap.get(&self.last_tick_key_events) {
-                    info!("Got action: {action:?}");
+                    //info!("Got action: {action:?}");
                     action_tx.send(action.clone())?;
                 }
             }
@@ -148,6 +158,7 @@ impl App {
                 Action::ChangeMode(module) => match module {
                     Module::Home => self.mode = Mode::Home,
                     Module::Cron => self.mode = Mode::Cron,
+                    Module::CronPopup => self.mode = Mode::CronPopup,
                 },
                 _ => {}
             }

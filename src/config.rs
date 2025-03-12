@@ -31,6 +31,8 @@ pub struct Config {
     pub keybindings: KeyBindings,
     #[serde(default)]
     pub styles: Styles,
+    #[serde(default)]
+    pub timezone: String,
 }
 
 lazy_static! {

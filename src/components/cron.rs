@@ -3,7 +3,7 @@ pub mod utils;
 
 use color_eyre::Result;
 use ratatui::{
-    crossterm::event::{MouseEvent, MouseEventKind},
+    crossterm::event::{KeyEvent, MouseEvent, MouseEventKind},
     layout::{Alignment, Constraint, Layout, Margin, Rect},
     prelude::{Buffer, Frame, StatefulWidget},
     text::Text,
@@ -13,6 +13,7 @@ use ratatui::{
     },
 };
 use tokio::sync::mpsc::UnboundedSender;
+use tracing::error;
 
 use super::Component;
 use crate::{
@@ -22,7 +23,7 @@ use crate::{
     style::TableStyles,
 };
 use edit::Inputs;
-use utils::{constraint_len_calculator, from_crontab};
+use utils::{constraint_len_calculator, from_crontab, save_to_crontab};
 
 impl Drawable for Cron {}
 const ITEM_HEIGHT: usize = 4;
@@ -223,6 +224,14 @@ impl Component for Cron {
         Ok(())
     }
 
+    // fn handle_key_event(&mut self, key: KeyEvent) -> Result<Option<Action>> {
+    //     if self.show_popup {
+    //         self.inputs
+    //             .handle_inputs(key, &mut self.show_popup, &mut self.items, &mut self.state);
+    //     }
+    //     Ok(None)
+    // }
+
     fn update(&mut self, action: Action) -> Result<Option<Action>> {
         if let Action::ChangeMode(Module::Cron) = action {
             self.enabled = true;
@@ -233,10 +242,28 @@ impl Component for Cron {
                     self.enabled = false;
                     return Ok(Some(Action::ClearScreen));
                 }
-                Action::Select => {
-                    // self.enabled = false;
-                    // return self.process_select();
+                Action::NewRecord => {
+                    //self.show_popup = true;
+                    //self.inputs.init_empty();
+                    let tx = self.command_tx.clone().unwrap();
+                    tx.send(Action::SendData(self.state.selected().unwrap().to_string()))
+                        .unwrap();
+                    return Ok(Some(Action::ChangeMode(Module::CronPopup)));
                 }
+                Action::DeleteRecord => {
+                    let index = self.state.selected().unwrap();
+                    self.items.remove(index);
+                    save_to_crontab(&self.items).unwrap_or_else(|err| {
+                        error!("Error saving to crontab: {}", err);
+                    });
+                }
+                // Action::Select => {
+                //     if !self.items.is_empty() {
+                //         self.show_popup = true;
+                //         self.inputs.is_new = false;
+                //         self.inputs.init(&mut self.items, &mut self.state);
+                //     }
+                // }
                 Action::MoveUp => {
                     self.previous_row();
                 }
