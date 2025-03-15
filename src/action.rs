@@ -13,13 +13,15 @@ pub enum Action {
     Help,
     ChangeMode(Module),
     Select,
+    Confirm,
     MoveUp,
     MoveDown,
     MoveToTheFirst,
     MoveToTheLast,
     NewRecord,
     DeleteRecord,
-    SendData(String),
+    PassData(Vec<String>),
+    SwtichInput,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Display, Serialize, Deserialize, Default, Copy)]

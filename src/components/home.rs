@@ -147,25 +147,29 @@ impl Component for Home {
     }
 
     fn handle_mouse_event(&mut self, mouse: MouseEvent) -> Result<Option<Action>> {
-        match mouse.kind {
-            MouseEventKind::Down(_) => {
-                let menu_start_row = 6;
-                let menu_height = self.menu_list.items.len();
-                let item_vertical_span: usize = 3;
+        if self.enabled {
+            match mouse.kind {
+                MouseEventKind::Down(_) => {
+                    let menu_start_row = 6;
+                    let menu_height = self.menu_list.items.len();
+                    let item_vertical_span: usize = 3;
 
-                if mouse.row >= menu_start_row
-                    && mouse.row < menu_start_row + menu_height as u16 * item_vertical_span as u16
-                {
-                    let selected_index =
-                        (mouse.row as usize - menu_start_row as usize) / item_vertical_span;
+                    if mouse.row >= menu_start_row
+                        && mouse.row
+                            < menu_start_row + menu_height as u16 * item_vertical_span as u16
+                    {
+                        let selected_index =
+                            (mouse.row as usize - menu_start_row as usize) / item_vertical_span;
 
-                    self.menu_list.state.select(Some(selected_index));
-                    self.enabled = false;
-                    return self.process_select();
+                        self.menu_list.state.select(Some(selected_index));
+                        self.enabled = false;
+                        return self.process_select();
+                    }
                 }
+                _ => {}
             }
-            _ => {}
         }
+
         Ok(None)
     }
 

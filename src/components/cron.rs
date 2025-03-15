@@ -1,11 +1,9 @@
-pub mod edit;
 pub mod utils;
 
 use color_eyre::Result;
 use ratatui::{
-    crossterm::event::{KeyEvent, MouseEvent, MouseEventKind},
-    layout::{Alignment, Constraint, Layout, Margin, Rect},
-    prelude::{Buffer, Frame, StatefulWidget},
+    layout::{Constraint, Layout, Margin, Rect},
+    prelude::Frame,
     text::Text,
     widgets::{
         Cell, HighlightSpacing, Row, Scrollbar, ScrollbarOrientation, ScrollbarState, Table,
@@ -22,8 +20,7 @@ use crate::{
     draw::Drawable,
     style::TableStyles,
 };
-use edit::Inputs;
-use utils::{constraint_len_calculator, from_crontab, save_to_crontab};
+use utils::{constraint_len_calculator, from_crontab, get_next_execution, save_to_crontab};
 
 impl Drawable for Cron {}
 const ITEM_HEIGHT: usize = 4;
@@ -38,8 +35,6 @@ pub struct Cron {
     longest_item_lens: (u16, u16, u16),
     scroll_state: ScrollbarState,
     styles: TableStyles,
-    show_popup: bool,
-    inputs: Inputs,
 }
 
 #[derive(Default)]
@@ -94,8 +89,6 @@ impl Cron {
             scroll_state: ScrollbarState::new(scroll_position),
             styles: TableStyles::new(),
             items: cron_jobs_vec,
-            show_popup: false,
-            inputs: Inputs::default(),
         }
     }
 
@@ -236,18 +229,39 @@ impl Component for Cron {
         if let Action::ChangeMode(Module::Cron) = action {
             self.enabled = true;
         }
+        if let Action::PassData(ref cron) = action {
+            if cron.len() != 0 {
+                let index: i32 = cron[0].parse().unwrap();
+                if index == -1 {
+                    self.items.push(CronJob::new(CronJob {
+                        cron_notation: cron[1].clone(),
+                        job: cron[2].clone(),
+                        job_description: cron[3].clone(),
+                        next_execution: get_next_execution(&cron[1]),
+                    }));
+                    save_to_crontab(&self.items).unwrap_or_else(|err| {
+                        error!("Error saving to crontab: {}", err);
+                    });
+                } else {
+                    self.items[index as usize].cron_notation = cron[1].clone();
+                    self.items[index as usize].job = cron[2].clone();
+                    self.items[index as usize].job_description = cron[3].clone();
+                    self.items[index as usize].next_execution = get_next_execution(&cron[1]);
+                    save_to_crontab(&self.items).unwrap_or_else(|err| {
+                        error!("Error saving to crontab: {}", err);
+                    });
+                }
+            }
+        }
         if self.enabled {
+            let tx = self.command_tx.clone().unwrap();
             match action {
                 Action::ChangeMode(Module::Home) => {
                     self.enabled = false;
                     return Ok(Some(Action::ClearScreen));
                 }
                 Action::NewRecord => {
-                    //self.show_popup = true;
-                    //self.inputs.init_empty();
-                    let tx = self.command_tx.clone().unwrap();
-                    tx.send(Action::SendData(self.state.selected().unwrap().to_string()))
-                        .unwrap();
+                    tx.send(Action::PassData(vec![])).unwrap();
                     return Ok(Some(Action::ChangeMode(Module::CronPopup)));
                 }
                 Action::DeleteRecord => {
@@ -257,13 +271,22 @@ impl Component for Cron {
                         error!("Error saving to crontab: {}", err);
                     });
                 }
-                // Action::Select => {
-                //     if !self.items.is_empty() {
-                //         self.show_popup = true;
-                //         self.inputs.is_new = false;
-                //         self.inputs.init(&mut self.items, &mut self.state);
-                //     }
-                // }
+                Action::Select => {
+                    if !self.items.is_empty() {
+                        tx.send(Action::PassData(vec![
+                            self.state.selected().unwrap().to_string(),
+                            self.items[self.state.selected().unwrap()]
+                                .cron_notation
+                                .to_string(),
+                            self.items[self.state.selected().unwrap()].job.to_string(),
+                            self.items[self.state.selected().unwrap()]
+                                .job_description
+                                .to_string(),
+                        ]))
+                        .unwrap();
+                        return Ok(Some(Action::ChangeMode(Module::CronPopup)));
+                    }
+                }
                 Action::MoveUp => {
                     self.previous_row();
                 }

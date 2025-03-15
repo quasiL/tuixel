@@ -7,12 +7,7 @@ use tracing::{debug, info};
 
 use crate::{
     action::{Action, Module},
-    components::{
-        cron::{self, Cron},
-        cron_popup::CronPopup,
-        home::Home,
-        Component,
-    },
+    components::{cron::Cron, cron_popup::CronPopup, home::Home, Component},
     config::Config,
     tui::{Event, Tui},
 };

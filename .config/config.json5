@@ -23,7 +23,9 @@
       "<d>": "DeleteRecord"
     },
     "CronPopup": {
-      "<q>": { "ChangeMode": "Cron" },
+      "<Esc>": { "ChangeMode": "Cron" },
+      "<Enter>": "Confirm",
+      "<Tab>": "SwtichInput",
     }
   },
   "timezone": "Europe/Prague"
