@@ -21,7 +21,7 @@ pub enum Action {
     NewRecord,
     DeleteRecord,
     PassData(Vec<String>),
-    SwtichInput,
+    SwtichElement,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Display, Serialize, Deserialize, Default, Copy)]
@@ -30,4 +30,5 @@ pub enum Module {
     Home,
     Cron,
     CronPopup,
+    MySql,
 }

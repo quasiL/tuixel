@@ -217,14 +217,6 @@ impl Component for Cron {
         Ok(())
     }
 
-    // fn handle_key_event(&mut self, key: KeyEvent) -> Result<Option<Action>> {
-    //     if self.show_popup {
-    //         self.inputs
-    //             .handle_inputs(key, &mut self.show_popup, &mut self.items, &mut self.state);
-    //     }
-    //     Ok(None)
-    // }
-
     fn update(&mut self, action: Action) -> Result<Option<Action>> {
         if let Action::ChangeMode(Module::Cron) = action {
             self.enabled = true;
@@ -316,17 +308,13 @@ impl Component for Cron {
                 frame,
                 rects[1],
                 vec![
-                    ("<Esc>", "Return to the main menu"),
+                    ("<Esc>", "Quit"),
                     ("<Enter>", "Edit selected cron"),
                     ("<↓↑>", "Move up and down"),
                     ("<d>", "Delete selected cron"),
                     ("<n>", "Add new cron"),
                 ],
             )?;
-
-            // if self.show_popup {
-            //     self.inputs.draw_inputs(frame, rects[0]);
-            // }
         }
         Ok(())
     }

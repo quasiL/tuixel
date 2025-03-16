@@ -66,7 +66,6 @@ pub struct EditWindowStyles {
     pub title_border_style: Style,
     pub unselected_input_border_style: Style,
     pub selected_input_border_style: Style,
-    pub footer_style: Style,
     pub valid_input_style: Style,
     pub valid_cursor_style: Style,
     pub invalid_input_style: Style,
@@ -87,14 +86,47 @@ impl EditWindowStyles {
                 .bg(tailwind::SLATE.c800),
             unselected_input_border_style: Style::new().fg(Color::Gray),
             selected_input_border_style: Style::new().fg(tailwind::SKY.c600),
-            footer_style: Style::new()
-                .fg(tailwind::GRAY.c400)
-                .bg(tailwind::SLATE.c800),
             valid_input_style: Style::new().fg(Color::LightGreen),
             valid_cursor_style: Style::new().bg(Color::LightGreen),
             invalid_input_style: Style::new().fg(Color::LightRed),
             invalid_cursor_style: Style::new().bg(Color::LightRed),
             cursor_style: Style::new().bg(Color::White),
+        }
+    }
+}
+
+#[derive(Default)]
+pub struct MysqlUsers {
+    pub items_style: Style,
+    pub items_border_style: Style,
+    pub info_style: Style,
+    pub info_border_style: Style,
+    pub selected_item_style: Style,
+    pub scrollbar_style: Style,
+}
+
+impl MysqlUsers {
+    pub const fn new() -> Self {
+        Self {
+            items_style: Style::new()
+                .fg(tailwind::GRAY.c300)
+                .bg(tailwind::SLATE.c800),
+            items_border_style: Style::new()
+                .fg(tailwind::GRAY.c400)
+                .bg(tailwind::SLATE.c800),
+            info_style: Style::new()
+                .fg(tailwind::GRAY.c300)
+                .bg(tailwind::SLATE.c800),
+            info_border_style: Style::new()
+                .fg(tailwind::GRAY.c400)
+                .bg(tailwind::SLATE.c800),
+            selected_item_style: Style::new()
+                .fg(tailwind::SLATE.c900)
+                .bg(tailwind::GRAY.c400),
+            scrollbar_style: Style::new()
+                .fg(Color::White)
+                .bg(Color::DarkGray)
+                .add_modifier(Modifier::REVERSED),
         }
     }
 }

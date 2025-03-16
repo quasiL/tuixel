@@ -3,11 +3,10 @@ use crossterm::event::KeyEvent;
 use ratatui::prelude::Rect;
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc;
-use tracing::{debug, info};
 
 use crate::{
     action::{Action, Module},
-    components::{cron::Cron, cron_popup::CronPopup, home::Home, Component},
+    components::{cron::Cron, cron_popup::CronPopup, home::Home, mysql::MySql, Component},
     config::Config,
     tui::{Event, Tui},
 };
@@ -31,6 +30,7 @@ pub enum Mode {
     Home,
     Cron,
     CronPopup,
+    MySql,
 }
 
 impl App {
@@ -43,6 +43,7 @@ impl App {
                 Box::new(Home::new()),
                 Box::new(Cron::new()),
                 Box::new(CronPopup::new()),
+                Box::new(MySql::new()),
             ],
             should_quit: false,
             should_suspend: false,
@@ -154,6 +155,7 @@ impl App {
                     Module::Home => self.mode = Mode::Home,
                     Module::Cron => self.mode = Mode::Cron,
                     Module::CronPopup => self.mode = Mode::CronPopup,
+                    Module::MySql => self.mode = Mode::MySql,
                 },
                 _ => {}
             }

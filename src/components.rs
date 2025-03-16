@@ -11,6 +11,7 @@ use crate::{action::Action, config::Config, tui::Event};
 pub mod cron;
 pub mod cron_popup;
 pub mod home;
+pub mod mysql;
 
 /// `Component` is a trait that represents a visual and interactive element of the user interface.
 ///

@@ -48,12 +48,12 @@ impl Home {
                 action: || Action::ChangeMode(Module::Cron),
             },
             MenuItem {
-                label: "👤 FTP",
+                label: "👤 Users",
                 action: || Action::Quit,
             },
             MenuItem {
                 label: "🐬 MySQL",
-                action: || Action::Quit,
+                action: || Action::ChangeMode(Module::MySql),
             },
             MenuItem {
                 label: "🌐 Webserver",
@@ -148,25 +148,22 @@ impl Component for Home {
 
     fn handle_mouse_event(&mut self, mouse: MouseEvent) -> Result<Option<Action>> {
         if self.enabled {
-            match mouse.kind {
-                MouseEventKind::Down(_) => {
-                    let menu_start_row = 6;
-                    let menu_height = self.menu_list.items.len();
-                    let item_vertical_span: usize = 3;
+            let menu_start_row = 6;
+            let menu_height = self.menu_list.items.len();
+            let item_vertical_span: usize = 3;
 
-                    if mouse.row >= menu_start_row
-                        && mouse.row
-                            < menu_start_row + menu_height as u16 * item_vertical_span as u16
-                    {
-                        let selected_index =
-                            (mouse.row as usize - menu_start_row as usize) / item_vertical_span;
+            if mouse.row >= menu_start_row
+                && mouse.row < menu_start_row + menu_height as u16 * item_vertical_span as u16
+            {
+                let selected_index =
+                    (mouse.row as usize - menu_start_row as usize) / item_vertical_span;
 
-                        self.menu_list.state.select(Some(selected_index));
-                        self.enabled = false;
-                        return self.process_select();
-                    }
+                self.menu_list.state.select(Some(selected_index));
+
+                if let MouseEventKind::Up(_) = mouse.kind {
+                    self.enabled = false;
+                    return self.process_select();
                 }
-                _ => {}
             }
         }
 
@@ -209,8 +206,8 @@ impl Component for Home {
             let [title_area, menu_area] =
                 Layout::vertical([Constraint::Length(5), Constraint::Min(1)]).areas(main_area);
 
-            self.draw_menu(frame, menu_area)?;
             self.draw_title(frame, title_area)?;
+            self.draw_menu(frame, menu_area)?;
             self.draw_footer(
                 frame,
                 footer_area,

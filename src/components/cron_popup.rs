@@ -141,7 +141,7 @@ impl Component for CronPopup {
                         let cron_value = &mut self.cron_notation_value;
                         if cron_input.input(key) {
                             cron_value.clear();
-                            if let Some(first_line) = cron_input.lines().get(0) {
+                            if let Some(first_line) = cron_input.lines().first() {
                                 cron_value.push_str(first_line);
                             }
                         }
@@ -151,7 +151,7 @@ impl Component for CronPopup {
                         let job_value = &mut self.job_value;
                         if job_input.input(key) {
                             job_value.clear();
-                            if let Some(first_line) = job_input.lines().get(0) {
+                            if let Some(first_line) = job_input.lines().first() {
                                 job_value.push_str(first_line);
                             }
                         }
@@ -161,7 +161,7 @@ impl Component for CronPopup {
                         let job_description_value = &mut self.job_description_value;
                         if job_description_input.input(key) {
                             job_description_value.clear();
-                            if let Some(first_line) = job_description_input.lines().get(0) {
+                            if let Some(first_line) = job_description_input.lines().first() {
                                 job_description_value.push_str(first_line);
                             }
                         }
@@ -178,7 +178,7 @@ impl Component for CronPopup {
         }
         if let Action::PassData(ref cron) = action {
             self.initial_render();
-            if cron.len() != 0 {
+            if !cron.is_empty() {
                 self.is_new = false;
                 self.index = cron[0].parse().unwrap();
                 self.cron_notation_value = cron[1].clone();
@@ -197,7 +197,7 @@ impl Component for CronPopup {
                 Action::ChangeMode(Module::Cron) => {
                     self.enabled = false;
                 }
-                Action::SwtichInput => {
+                Action::SwtichElement => {
                     self.current_input = self.current_input.next();
                 }
                 Action::Confirm => {
@@ -259,7 +259,7 @@ impl Component for CronPopup {
             let [help] = footer.areas(footer_area);
 
             let selected_cron_notation = get_human_readable_cron(self.cron_notation_value.as_str())
-                .unwrap_or_else(|e| format!("{}", e));
+                .unwrap_or_else(|e| e.to_string());
 
             let wrapped_text: Vec<Line> = selected_cron_notation
                 .chars()
@@ -422,7 +422,7 @@ fn validate(textarea: &mut TextArea) -> Result<(), ValidationError> {
 
     let input = textarea
         .lines()
-        .get(0)
+        .first()
         .map(|s| s.as_str())
         .unwrap_or("")
         .trim();
