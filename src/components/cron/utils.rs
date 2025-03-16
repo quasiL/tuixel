@@ -98,7 +98,7 @@ pub fn from_crontab() -> Result<Vec<CronJob>, io::Error> {
             cron_jobs.push(CronJob {
                 cron_notation,
                 job,
-                job_description: comment.take().unwrap_or_else(String::new),
+                job_description: comment.take().unwrap_or_default(),
                 next_execution: modified_next_execution,
             });
         }
