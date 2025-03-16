@@ -222,7 +222,7 @@ impl Component for Cron {
             self.enabled = true;
         }
         if let Action::PassData(ref cron) = action {
-            if cron.len() != 0 {
+            if !cron.is_empty() {
                 let index: i32 = cron[0].parse().unwrap();
                 if index == -1 {
                     self.items.push(CronJob::new(CronJob {

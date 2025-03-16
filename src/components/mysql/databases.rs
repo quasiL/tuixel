@@ -1,12 +1,17 @@
+// use ratatui::{
+//     buffer::Buffer,
+//     crossterm::event::{MouseEvent, MouseEventKind},
+//     layout::{Alignment, Constraint, Layout, Rect},
+//     prelude::Frame,
+//     style::{palette::tailwind, Color, Stylize},
+//     symbols,
+//     text::{Line, Text},
+//     widgets::{Block, Borders, List, ListState, Padding, Paragraph, Tabs, Widget},
+// };
 use ratatui::{
     buffer::Buffer,
-    crossterm::event::{MouseEvent, MouseEventKind},
-    layout::{Alignment, Constraint, Layout, Rect},
-    prelude::Frame,
-    style::{palette::tailwind, Color, Stylize},
-    symbols,
-    text::{Line, Text},
-    widgets::{Block, Borders, List, ListState, Padding, Paragraph, Tabs, Widget},
+    layout::Rect,
+    widgets::{Paragraph, Widget},
 };
 
 use crate::components::mysql::SelectedTab;

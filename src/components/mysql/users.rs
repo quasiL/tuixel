@@ -54,7 +54,7 @@ impl UsersView {
         let scroll_position = if mysql_users.is_empty() {
             0
         } else {
-            (mysql_users.len() - 1) * 1
+            mysql_users.len() - 1 // * 1
         };
 
         Self {

@@ -145,8 +145,8 @@ impl Component for MySql {
                 }
                 _ => {}
             }
-            match self.selected_tab {
-                SelectedTab::Users => match action {
+            if let SelectedTab::Users = self.selected_tab {
+                match action {
                     Action::MoveDown => {
                         self.users_view.next_user();
                     }
@@ -154,8 +154,7 @@ impl Component for MySql {
                         self.users_view.previous_user();
                     }
                     _ => {}
-                },
-                _ => {}
+                }
             }
         }
         Ok(None)
