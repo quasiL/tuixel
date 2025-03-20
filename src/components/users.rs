@@ -11,89 +11,67 @@ use ratatui::{
     },
 };
 use tokio::sync::mpsc::UnboundedSender;
-use tracing::error;
 
-use super::Component;
+use super::{
+    users::utils::constraint_len_calculator, users::utils::get_users_from_passwd, Component,
+};
 use crate::{
     action::{Action, Module},
     config::Config,
     draw::Drawable,
     style::TableStyles,
 };
-use utils::{constraint_len_calculator, from_crontab, get_next_execution, save_to_crontab};
 
-impl Drawable for Cron {}
+impl Drawable for Users {}
 const ITEM_HEIGHT: usize = 3;
 
 #[derive(Default)]
-pub struct Cron {
+pub struct Users {
     command_tx: Option<UnboundedSender<Action>>,
     config: Config,
     enabled: bool,
     state: TableState,
-    items: Vec<CronJob>,
+    items: Vec<User>,
     longest_item_lens: (u16, u16, u16),
     scroll_state: ScrollbarState,
     styles: TableStyles,
 }
 
 #[derive(Default)]
-pub struct CronJob {
-    pub cron_notation: String,
-    pub job: String,
-    pub job_description: String,
-    pub next_execution: String,
+pub struct User {
+    pub username: String,
+    pub docroot: String,
+    pub shell: String,
 }
 
-impl CronJob {
+impl User {
     const fn ref_array(&self) -> [&String; 3] {
-        [
-            &self.cron_notation,
-            &self.next_execution,
-            &self.job_description,
-        ]
-    }
-
-    pub fn new(cron_job: CronJob) -> Self {
-        Self {
-            cron_notation: cron_job.cron_notation,
-            job: cron_job.job,
-            job_description: cron_job.job_description,
-            next_execution: cron_job.next_execution,
-        }
+        [&self.username, &self.docroot, &self.shell]
     }
 }
 
-impl Cron {
+impl Users {
     pub fn new() -> Self {
-        let cron_jobs_vec = from_crontab().unwrap_or_else(|err| {
-            tracing::error!("Error reading crontab: {}", err);
-            vec![CronJob {
-                cron_notation: format!("Error: {}", err),
-                job: String::new(),
-                job_description: String::new(),
-                next_execution: String::new(),
-            }]
-        });
-        let scroll_position = if cron_jobs_vec.is_empty() {
+        let users = vec![];
+        let scroll_position = if users.is_empty() {
             0
         } else {
-            (cron_jobs_vec.len() - 1) * ITEM_HEIGHT
+            (users.len() - 1) * ITEM_HEIGHT
         };
         Self {
             command_tx: None,
             config: Config::default(),
             enabled: false,
             state: TableState::default().with_selected(0),
-            longest_item_lens: constraint_len_calculator(&cron_jobs_vec),
+            longest_item_lens: constraint_len_calculator(&users),
             scroll_state: ScrollbarState::new(scroll_position),
             styles: TableStyles::new(),
-            items: cron_jobs_vec,
+            items: users,
         }
     }
 
     fn draw_table(&mut self, frame: &mut Frame, area: Rect) {
-        let header = ["Cron Notation", "Next Execution", "Description"]
+        let header = ["Username", "Document Root", "Shell"]
             .into_iter()
             .map(|title| Cell::from(Text::from(format!("\n{}\n", title))))
             .collect::<Row>()
@@ -115,11 +93,15 @@ impl Cron {
         });
 
         let bar = " ▌ ";
+        self.longest_item_lens = constraint_len_calculator(&self.items);
+        if self.longest_item_lens.0 < "Username".len() as u16 {
+            self.longest_item_lens.0 = "Username".len() as u16;
+        }
         let table = Table::new(
             rows,
             [
-                Constraint::Length(self.longest_item_lens.0 + 8),
-                Constraint::Min(self.longest_item_lens.1 + 1),
+                Constraint::Length(self.longest_item_lens.0 + 2),
+                Constraint::Min(self.longest_item_lens.1 + 2),
                 Constraint::Min(self.longest_item_lens.2),
             ],
         )
@@ -186,10 +168,12 @@ impl Cron {
         self.state.select(Some(i));
         self.scroll_state = self.scroll_state.position(i * ITEM_HEIGHT);
     }
+
     fn first_row(&mut self) {
         self.state.select(Some(0));
         self.scroll_state = self.scroll_state.position(0);
     }
+
     fn last_row(&mut self) {
         if !self.items.is_empty() {
             let last_index = self.items.len() - 1;
@@ -199,7 +183,7 @@ impl Cron {
     }
 }
 
-impl Component for Cron {
+impl Component for Users {
     fn register_action_handler(&mut self, tx: UnboundedSender<Action>) -> Result<()> {
         self.command_tx = Some(tx);
         Ok(())
@@ -211,66 +195,21 @@ impl Component for Cron {
     }
 
     fn update(&mut self, action: Action) -> Result<Option<Action>> {
-        if let Action::ChangeMode(Module::Cron) = action {
+        if let Action::ChangeMode(Module::Users) = action {
+            self.items = get_users_from_passwd(&self.config.settings.users.docroot);
+            let scroll_position = if self.items.is_empty() {
+                0
+            } else {
+                (self.items.len() - 1) * ITEM_HEIGHT
+            };
+            self.scroll_state = ScrollbarState::new(scroll_position);
             self.enabled = true;
         }
-        if let Action::PassData(ref cron) = action {
-            if !cron.is_empty() {
-                let index: i32 = cron[0].parse().unwrap();
-                if index == -1 {
-                    self.items.push(CronJob::new(CronJob {
-                        cron_notation: cron[1].clone(),
-                        job: cron[2].clone(),
-                        job_description: cron[3].clone(),
-                        next_execution: get_next_execution(&cron[1]),
-                    }));
-                    save_to_crontab(&self.items).unwrap_or_else(|err| {
-                        error!("Error saving to crontab: {}", err);
-                    });
-                } else {
-                    self.items[index as usize].cron_notation = cron[1].clone();
-                    self.items[index as usize].job = cron[2].clone();
-                    self.items[index as usize].job_description = cron[3].clone();
-                    self.items[index as usize].next_execution = get_next_execution(&cron[1]);
-                    save_to_crontab(&self.items).unwrap_or_else(|err| {
-                        error!("Error saving to crontab: {}", err);
-                    });
-                }
-            }
-        }
         if self.enabled {
-            let tx = self.command_tx.clone().unwrap();
             match action {
                 Action::ChangeMode(Module::Home) => {
                     self.enabled = false;
                     return Ok(Some(Action::ClearScreen));
-                }
-                Action::NewRecord => {
-                    tx.send(Action::PassData(vec![])).unwrap();
-                    return Ok(Some(Action::ChangeMode(Module::CronPopup)));
-                }
-                Action::DeleteRecord => {
-                    let index = self.state.selected().unwrap();
-                    self.items.remove(index);
-                    save_to_crontab(&self.items).unwrap_or_else(|err| {
-                        error!("Error saving to crontab: {}", err);
-                    });
-                }
-                Action::Select => {
-                    if !self.items.is_empty() {
-                        tx.send(Action::PassData(vec![
-                            self.state.selected().unwrap().to_string(),
-                            self.items[self.state.selected().unwrap()]
-                                .cron_notation
-                                .to_string(),
-                            self.items[self.state.selected().unwrap()].job.to_string(),
-                            self.items[self.state.selected().unwrap()]
-                                .job_description
-                                .to_string(),
-                        ]))
-                        .unwrap();
-                        return Ok(Some(Action::ChangeMode(Module::CronPopup)));
-                    }
                 }
                 Action::MoveUp => {
                     self.previous_row();
@@ -300,13 +239,7 @@ impl Component for Cron {
             self.draw_footer(
                 frame,
                 rects[1],
-                vec![
-                    ("<Esc>", "Quit"),
-                    ("<Enter>", "Edit selected cron"),
-                    ("<↓↑>", "Move up and down"),
-                    ("<d>", "Delete selected cron"),
-                    ("<n>", "Add new cron"),
-                ],
+                vec![("<Esc>", "Quit"), ("<↓↑>", "Move up and down")],
             )?;
         }
         Ok(())

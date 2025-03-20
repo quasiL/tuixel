@@ -32,7 +32,19 @@
       "<Tab>": "SwtichElement",
       "<Up>": "MoveUp",
       "<Down>": "MoveDown",
+    },
+    "Users": {
+      "<Esc>": { "ChangeMode": "Home" },
+      "<Up>": "MoveUp",
+      "<Down>": "MoveDown",
     }
   },
-  "timezone": "Europe/Prague"
+  "settings": {
+    "Cron": {
+      "timezone": "Europe/Prague",
+    },
+    "Users": {
+      "docroot": "/home",
+    },    
+  }
 }

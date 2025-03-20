@@ -24,6 +24,26 @@ pub struct AppConfig {
 }
 
 #[derive(Clone, Debug, Default, Deserialize)]
+pub struct Settings {
+    #[serde(default)]
+    pub cron: CronSettings,
+    #[serde(default)]
+    pub users: UserSettings,
+}
+
+#[derive(Clone, Debug, Default, Deserialize)]
+pub struct CronSettings {
+    #[serde(default)]
+    pub timezone: String,
+}
+
+#[derive(Clone, Debug, Default, Deserialize)]
+pub struct UserSettings {
+    #[serde(default)]
+    pub docroot: String,
+}
+
+#[derive(Clone, Debug, Default, Deserialize)]
 pub struct Config {
     #[serde(default, flatten)]
     pub config: AppConfig,
@@ -32,7 +52,7 @@ pub struct Config {
     #[serde(default)]
     pub styles: Styles,
     #[serde(default)]
-    pub timezone: String,
+    pub settings: Settings,
 }
 
 lazy_static! {

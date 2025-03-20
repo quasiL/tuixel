@@ -49,7 +49,7 @@ impl Home {
             },
             MenuItem {
                 label: "👤 Users",
-                action: || Action::Quit,
+                action: || Action::ChangeMode(Module::Users),
             },
             MenuItem {
                 label: "🐬 MySQL",
