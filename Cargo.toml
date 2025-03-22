@@ -1,6 +1,6 @@
 [package]
 name = "tuixel"
-version = "0.1.0"
+version = "1.0.1"
 edition = "2021"
 description = "tuixel"
 authors = ["Artur Chairullin <artur.chairullin@apertia.cz>"]

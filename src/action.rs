@@ -33,4 +33,5 @@ pub enum Module {
     MySql,
     Users,
     Webserver,
+    Settings,
 }

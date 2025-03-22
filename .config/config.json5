@@ -40,6 +40,9 @@
     },
     "Webserver": {
       "<Esc>": { "ChangeMode": "Home" },
+    },
+    "Settings": {
+      "<Esc>": { "ChangeMode": "Home" },
     }
   },
   "settings": {

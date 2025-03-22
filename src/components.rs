@@ -12,6 +12,7 @@ pub mod cron;
 pub mod cron_popup;
 pub mod home;
 pub mod mysql;
+pub mod settings;
 pub mod users;
 pub mod webserver;
 

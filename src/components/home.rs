@@ -4,7 +4,7 @@ use ratatui::{
     layout::{Alignment, Constraint, Layout, Rect},
     prelude::Frame,
     text::Text,
-    widgets::{Block, List, ListState},
+    widgets::{Block, List, ListState, Paragraph},
 };
 use tokio::sync::mpsc::UnboundedSender;
 use tui_big_text::{BigText, PixelSize};
@@ -61,7 +61,7 @@ impl Home {
             },
             MenuItem {
                 label: "🔧 Settings",
-                action: || Action::Quit,
+                action: || Action::ChangeMode(Module::Settings),
             },
         ];
         Self {
@@ -201,16 +201,25 @@ impl Component for Home {
     fn draw(&mut self, frame: &mut Frame, area: Rect) -> Result<()> {
         if self.enabled {
             let [main_area, footer_area] =
-                Layout::vertical([Constraint::Min(1), Constraint::Length(2)]).areas(area);
+                Layout::vertical([Constraint::Min(1), Constraint::Length(3)]).areas(area);
 
             let [title_area, menu_area] =
                 Layout::vertical([Constraint::Length(5), Constraint::Min(1)]).areas(main_area);
 
+            let [version_area, help_area] =
+                Layout::vertical([Constraint::Length(1), Constraint::Min(2)]).areas(footer_area);
+
             self.draw_title(frame, title_area)?;
             self.draw_menu(frame, menu_area)?;
+
+            let regular_text_version = Paragraph::new(format!(" v{}", env!("CARGO_PKG_VERSION")))
+                .style(self.styles.header_style)
+                .alignment(Alignment::Left);
+            frame.render_widget(regular_text_version, version_area);
+
             self.draw_footer(
                 frame,
-                footer_area,
+                help_area,
                 vec![
                     ("<Esc/q>", "Quit"),
                     ("<Enter>", "Select"),

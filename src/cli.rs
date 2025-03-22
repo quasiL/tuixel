@@ -37,6 +37,6 @@ pub fn version() -> String {
 Authors: {author}
 
 Config directory: {config_dir_path}
-Data directory: {data_dir_path}"
+Log directory: {data_dir_path}"
     )
 }
