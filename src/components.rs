@@ -13,6 +13,7 @@ pub mod cron_popup;
 pub mod home;
 pub mod mysql;
 pub mod users;
+pub mod webserver;
 
 /// `Component` is a trait that represents a visual and interactive element of the user interface.
 ///

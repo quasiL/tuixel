@@ -7,7 +7,8 @@ use tokio::sync::mpsc;
 use crate::{
     action::{Action, Module},
     components::{
-        cron::Cron, cron_popup::CronPopup, home::Home, mysql::MySql, users::Users, Component,
+        cron::Cron, cron_popup::CronPopup, home::Home, mysql::MySql, users::Users,
+        webserver::Webserver, Component,
     },
     config::Config,
     tui::{Event, Tui},
@@ -34,6 +35,7 @@ pub enum Mode {
     CronPopup,
     MySql,
     Users,
+    Webserver,
 }
 
 impl App {
@@ -48,6 +50,7 @@ impl App {
                 Box::new(CronPopup::new()),
                 Box::new(MySql::new()),
                 Box::new(Users::new()),
+                Box::new(Webserver::new()),
             ],
             should_quit: false,
             should_suspend: false,
@@ -161,6 +164,7 @@ impl App {
                     Module::CronPopup => self.mode = Mode::CronPopup,
                     Module::MySql => self.mode = Mode::MySql,
                     Module::Users => self.mode = Mode::Users,
+                    Module::Webserver => self.mode = Mode::Webserver,
                 },
                 _ => {}
             }

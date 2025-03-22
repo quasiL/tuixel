@@ -130,3 +130,20 @@ impl MysqlUsers {
         }
     }
 }
+
+#[derive(Default)]
+pub struct WebserverStyles {
+    pub background_style: Style,
+    pub border_style: Style,
+}
+
+impl WebserverStyles {
+    pub const fn new() -> Self {
+        Self {
+            background_style: Style::new().bg(tailwind::SLATE.c800),
+            border_style: Style::new()
+                .fg(tailwind::GRAY.c400)
+                .bg(tailwind::SLATE.c800),
+        }
+    }
+}

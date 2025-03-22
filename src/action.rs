@@ -32,4 +32,5 @@ pub enum Module {
     CronPopup,
     MySql,
     Users,
+    Webserver,
 }

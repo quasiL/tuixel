@@ -37,6 +37,9 @@
       "<Esc>": { "ChangeMode": "Home" },
       "<Up>": "MoveUp",
       "<Down>": "MoveDown",
+    },
+    "Webserver": {
+      "<Esc>": { "ChangeMode": "Home" },
     }
   },
   "settings": {

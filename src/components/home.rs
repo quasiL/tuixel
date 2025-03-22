@@ -57,7 +57,7 @@ impl Home {
             },
             MenuItem {
                 label: "🌐 Webserver",
-                action: || Action::Quit,
+                action: || Action::ChangeMode(Module::Webserver),
             },
             MenuItem {
                 label: "🔧 Settings",
