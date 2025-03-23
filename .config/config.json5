@@ -25,11 +25,11 @@
     "CronPopup": {
       "<Esc>": { "ChangeMode": "Cron" },
       "<Enter>": "Confirm",
-      "<Tab>": "SwtichElement",
+      "<Tab>": "SwitchElement",
     },
     "MySql": {
       "<Esc>": { "ChangeMode": "Home" },
-      "<Tab>": "SwtichElement",
+      "<Tab>": "SwitchElement",
       "<Up>": "MoveUp",
       "<Down>": "MoveDown",
     },

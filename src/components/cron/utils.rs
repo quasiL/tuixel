@@ -1,19 +1,26 @@
 use crate::components::cron::CronJob;
 use chrono::Utc;
+use chrono_tz::Tz;
 use cron_descriptor::cronparser::cron_expression_descriptor;
 use cron_descriptor::cronparser::Options;
 use cron_parser::parse;
 use std::io::{self, BufRead, Write};
 use std::panic;
 use std::process::{Command, Stdio};
+use std::str::FromStr;
 use unicode_width::UnicodeWidthStr;
 
-pub fn get_next_execution(cron_expr: &str) -> String {
-    //let settings = CONFIG.read().unwrap();
-    //let timezone = settings.get_timezone();
+pub fn get_next_execution(cron_expr: &str, timezone: &str) -> String {
+    let timezone: Tz = if !timezone.is_empty() {
+        match Tz::from_str(timezone) {
+            Ok(tz) => tz,
+            Err(_) => return "Invalid timezone".to_string(),
+        }
+    } else {
+        chrono_tz::Tz::UTC
+    };
 
-    //let now = Utc::now().with_timezone(&timezone);
-    let now = Utc::now();
+    let now = Utc::now().with_timezone(&timezone);
 
     match parse(cron_expr, &now) {
         Ok(next) => format!("{}", next),
@@ -47,7 +54,7 @@ pub fn get_human_readable_cron(cron_expr: &str) -> Result<String, String> {
     }
 }
 
-pub fn from_crontab() -> Result<Vec<CronJob>, io::Error> {
+pub fn from_crontab(timezone: &str) -> Result<Vec<CronJob>, io::Error> {
     let output = Command::new("crontab")
         .arg("-l")
         .stdout(Stdio::piped())
@@ -93,7 +100,7 @@ pub fn from_crontab() -> Result<Vec<CronJob>, io::Error> {
 
             let cron_notation = parts[..5].join(" ");
             let job = parts[5..].join(" ");
-            let modified_next_execution = get_next_execution(&cron_notation);
+            let modified_next_execution = get_next_execution(&cron_notation, timezone);
 
             cron_jobs.push(CronJob {
                 cron_notation,

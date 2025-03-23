@@ -19,7 +19,7 @@ use crate::{
     style::EditWindowStyles,
 };
 
-#[derive(Default)]
+#[derive(Default, PartialEq)]
 enum ActiveInput {
     #[default]
     CronNotation,
@@ -197,7 +197,7 @@ impl Component for CronPopup {
                 Action::ChangeMode(Module::Cron) => {
                     self.enabled = false;
                 }
-                Action::SwtichElement => {
+                Action::SwitchElement => {
                     self.current_input = self.current_input.next();
                 }
                 Action::Confirm => {

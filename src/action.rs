@@ -21,7 +21,7 @@ pub enum Action {
     NewRecord,
     DeleteRecord,
     PassData(Vec<String>),
-    SwtichElement,
+    SwitchElement,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Display, Serialize, Deserialize, Default, Copy)]
