@@ -59,7 +59,7 @@ impl Settings {
             .alignment(Alignment::Center);
         frame.render_widget(title, layout[0]);
 
-        let settings_data = vec![
+        let settings_data = [
             (
                 "Timezone:",
                 if self.config.settings.cron.timezone.is_empty() {
@@ -81,9 +81,7 @@ impl Settings {
         let settings_layout = Layout::default()
             .direction(Direction::Vertical)
             .constraints(
-                std::iter::repeat(Constraint::Length(2))
-                    .take(settings_data.len())
-                    .collect::<Vec<_>>(),
+                std::iter::repeat_n(Constraint::Length(2), settings_data.len()).collect::<Vec<_>>(),
             )
             .margin(1)
             .split(layout[1]);
