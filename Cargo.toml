@@ -3,7 +3,7 @@ name = "tuixel"
 version = "1.0.1"
 edition = "2021"
 description = "tuixel"
-authors = ["Artur Chairullin <artur.chairullin@apertia.cz>"]
+authors = ["Artur Khairullin <info@tuixel.sh>"]
 build = "build.rs"
 repository = "https://github.com/quasiL/tuixel"
 
