@@ -25,6 +25,7 @@ enum ActiveInput {
     CronNotation,
     Job,
     JobDescription,
+    AIQuestion,
 }
 
 impl ActiveInput {
@@ -32,7 +33,8 @@ impl ActiveInput {
         match self {
             ActiveInput::CronNotation => ActiveInput::Job,
             ActiveInput::Job => ActiveInput::JobDescription,
-            ActiveInput::JobDescription => ActiveInput::CronNotation,
+            ActiveInput::JobDescription => ActiveInput::AIQuestion,
+            ActiveInput::AIQuestion => ActiveInput::CronNotation,
         }
     }
 }
@@ -47,10 +49,12 @@ pub struct CronPopup {
     cron_notation: TextArea<'static>,
     job: TextArea<'static>,
     job_description: TextArea<'static>,
+    ai_question: TextArea<'static>,
     current_input: ActiveInput,
     cron_notation_value: String,
     job_value: String,
     job_description_value: String,
+    ai_question_value: String,
 }
 
 impl Drawable for CronPopup {}
@@ -66,10 +70,12 @@ impl Default for CronPopup {
             cron_notation: TextArea::default(),
             job: TextArea::default(),
             job_description: TextArea::default(),
+            ai_question: TextArea::default(),
             current_input: ActiveInput::CronNotation,
             cron_notation_value: String::new(),
             job_value: String::new(),
             job_description_value: String::new(),
+            ai_question_value: String::new(),
             is_new: true,
         }
     }
@@ -87,12 +93,15 @@ impl CronPopup {
         self.job.delete_line_by_end();
         self.job_description.delete_line_by_head();
         self.job_description.delete_line_by_end();
+        self.ai_question.delete_line_by_head();
+        self.ai_question.delete_line_by_end();
     }
 
     fn flash_values(&mut self) {
         self.cron_notation_value.clear();
         self.job_value.clear();
         self.job_description_value.clear();
+        self.ai_question_value.clear();
     }
 
     fn initial_render(&mut self) {
@@ -117,6 +126,16 @@ impl CronPopup {
 
         description_input.set_placeholder_text("Enter a description");
         description_input.set_cursor_line_style(Style::default());
+
+        self.ai_question
+            .set_placeholder_text("Ask AI to convert human readable into cron notation");
+        self.ai_question.set_cursor_line_style(Style::default());
+    }
+
+    fn make_request_to_ai(&mut self) -> String {
+        let question = self.ai_question_value.clone();
+        let response = format!("0 0 1 1 *: {}:", question);
+        response
     }
 }
 
@@ -135,6 +154,15 @@ impl Component for CronPopup {
         if self.enabled {
             match key.code {
                 KeyCode::Tab => {}
+                KeyCode::Enter => {}
+                KeyCode::Up => {
+                    if self.current_input == ActiveInput::AIQuestion {
+                        self.cron_notation_value = self.make_request_to_ai();
+                        self.cron_notation.delete_line_by_head();
+                        self.cron_notation.delete_line_by_end();
+                        self.cron_notation.insert_str(&self.cron_notation_value);
+                    }
+                }
                 _ => match self.current_input {
                     ActiveInput::CronNotation => {
                         let cron_input = &mut self.cron_notation;
@@ -163,6 +191,16 @@ impl Component for CronPopup {
                             job_description_value.clear();
                             if let Some(first_line) = job_description_input.lines().first() {
                                 job_description_value.push_str(first_line);
+                            }
+                        }
+                    }
+                    ActiveInput::AIQuestion => {
+                        let ai_question_input = &mut self.ai_question;
+                        let ai_question_value = &mut self.ai_question_value;
+                        if ai_question_input.input(key) {
+                            ai_question_value.clear();
+                            if let Some(first_line) = ai_question_input.lines().first() {
+                                ai_question_value.push_str(first_line);
                             }
                         }
                     }
@@ -195,29 +233,30 @@ impl Component for CronPopup {
         if self.enabled {
             match action {
                 Action::ChangeMode(Module::Cron) => {
+                    self.flash_inputs();
+                    self.flash_values();
                     self.enabled = false;
                 }
                 Action::SwitchElement => {
                     self.current_input = self.current_input.next();
                 }
-                Action::Confirm => {
-                    self.enabled = false;
-                    match validate(&mut self.cron_notation) {
-                        Ok(_) => {
-                            let tx = self.command_tx.clone().unwrap();
-                            tx.send(Action::PassData(vec![
-                                self.index.to_string(),
-                                self.cron_notation_value.clone(),
-                                self.job_value.clone(),
-                                self.job_description_value.clone(),
-                            ]))
-                            .unwrap();
-                            self.enabled = false;
-                            return Ok(Some(Action::ChangeMode(Module::Cron)));
-                        }
-                        Err(ValidationError::InvalidCronExpression(_)) => {}
+                Action::Confirm => match validate(&mut self.cron_notation) {
+                    Ok(_) => {
+                        let tx = self.command_tx.clone().unwrap();
+                        tx.send(Action::PassData(vec![
+                            self.index.to_string(),
+                            self.cron_notation_value.clone(),
+                            self.job_value.clone(),
+                            self.job_description_value.clone(),
+                        ]))
+                        .unwrap();
+                        self.enabled = false;
+                        return Ok(Some(Action::ChangeMode(Module::Cron)));
                     }
-                }
+                    Err(ValidationError::InvalidCronExpression(_)) => {
+                        self.current_input = ActiveInput::CronNotation;
+                    }
+                },
                 _ => {}
             }
         }
@@ -229,11 +268,11 @@ impl Component for CronPopup {
             let area = center(
                 frame.area(),
                 Constraint::Percentage(70),
-                Constraint::Length(19),
+                Constraint::Length(22),
             );
             frame.render_widget(Clear, area);
 
-            let layout = Layout::vertical([Constraint::Length(17), Constraint::Length(2)])
+            let layout = Layout::vertical([Constraint::Length(20), Constraint::Length(2)])
                 .flex(Flex::SpaceBetween);
             let [main_area, footer_area] = layout.areas(area);
 
@@ -250,10 +289,11 @@ impl Component for CronPopup {
                 Constraint::Length(3),
                 Constraint::Length(3),
                 Constraint::Length(3),
+                Constraint::Length(3),
             ])
             .margin(2)
             .flex(Flex::Start);
-            let [title, cron_notation, job, description] = main.areas(main_area);
+            let [title, cron_notation, job, description, ai] = main.areas(main_area);
 
             let footer = Layout::vertical([Constraint::Length(3)]);
             let [help] = footer.areas(footer_area);
@@ -298,6 +338,7 @@ impl Component for CronPopup {
             let cron_input: &mut TextArea<'_> = &mut self.cron_notation;
             let job_input = &mut self.job;
             let description_input = &mut self.job_description;
+            let ai_question_input = &mut self.ai_question;
 
             match self.current_input {
                 ActiveInput::CronNotation => {
@@ -340,6 +381,15 @@ impl Component for CronPopup {
                             .title("Description"),
                     );
                     frame.render_widget(&*description_input, description);
+
+                    ai_question_input.set_cursor_style(Style::default());
+                    ai_question_input.set_block(
+                        Block::default()
+                            .borders(Borders::ALL)
+                            .border_style(self.styles.unselected_input_border_style)
+                            .title("Ask AI"),
+                    );
+                    frame.render_widget(&*ai_question_input, ai);
                 }
                 ActiveInput::Job => {
                     job_input.set_cursor_style(self.styles.cursor_style);
@@ -368,6 +418,15 @@ impl Component for CronPopup {
                             .title("Description"),
                     );
                     frame.render_widget(&*description_input, description);
+
+                    ai_question_input.set_cursor_style(Style::default());
+                    ai_question_input.set_block(
+                        Block::default()
+                            .borders(Borders::ALL)
+                            .border_style(self.styles.unselected_input_border_style)
+                            .title("Ask AI"),
+                    );
+                    frame.render_widget(&*ai_question_input, ai);
                 }
                 ActiveInput::JobDescription => {
                     description_input.set_cursor_style(self.styles.cursor_style);
@@ -396,6 +455,52 @@ impl Component for CronPopup {
                             .title("Job"),
                     );
                     frame.render_widget(&*job_input, job);
+
+                    ai_question_input.set_cursor_style(Style::default());
+                    ai_question_input.set_block(
+                        Block::default()
+                            .borders(Borders::ALL)
+                            .border_style(self.styles.unselected_input_border_style)
+                            .title("Ask AI"),
+                    );
+                    frame.render_widget(&*ai_question_input, ai);
+                }
+                ActiveInput::AIQuestion => {
+                    ai_question_input.set_cursor_style(self.styles.cursor_style);
+                    ai_question_input.set_block(
+                        Block::default()
+                            .borders(Borders::ALL)
+                            .border_style(self.styles.selected_input_border_style)
+                            .title("Ask AI"),
+                    );
+                    frame.render_widget(&*ai_question_input, ai);
+
+                    cron_input.set_cursor_style(Style::default());
+                    cron_input.set_block(
+                        Block::default()
+                            .borders(Borders::ALL)
+                            .border_style(self.styles.unselected_input_border_style)
+                            .title("Cron notation*"),
+                    );
+                    frame.render_widget(&*cron_input, cron_notation);
+
+                    job_input.set_cursor_style(Style::default());
+                    job_input.set_block(
+                        Block::default()
+                            .borders(Borders::ALL)
+                            .border_style(self.styles.unselected_input_border_style)
+                            .title("Job"),
+                    );
+                    frame.render_widget(&*job_input, job);
+
+                    description_input.set_cursor_style(Style::default());
+                    description_input.set_block(
+                        Block::default()
+                            .borders(Borders::ALL)
+                            .border_style(self.styles.unselected_input_border_style)
+                            .title("Description"),
+                    );
+                    frame.render_widget(&*description_input, description);
                 }
             }
         }

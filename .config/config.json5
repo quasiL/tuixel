@@ -29,9 +29,6 @@
     },
     "MySql": {
       "<Esc>": { "ChangeMode": "Home" },
-      "<Tab>": "SwitchElement",
-      "<Up>": "MoveUp",
-      "<Down>": "MoveDown",
     },
     "Users": {
       "<Esc>": { "ChangeMode": "Home" },

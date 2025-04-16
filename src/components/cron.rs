@@ -296,6 +296,7 @@ impl Component for Cron {
                 }
                 Action::NewRecord => {
                     tx.send(Action::PassData(vec![])).unwrap();
+                    self.mouse = false;
                     return Ok(Some(Action::ChangeMode(Module::CronPopup)));
                 }
                 Action::DeleteRecord => {
@@ -318,6 +319,7 @@ impl Component for Cron {
                                 .to_string(),
                         ]))
                         .unwrap();
+                        self.mouse = false;
                         return Ok(Some(Action::ChangeMode(Module::CronPopup)));
                     }
                 }
